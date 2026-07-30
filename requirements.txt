@@ -1,5 +1,7 @@
 fastapi
 uvicorn
 python-multipart
-tensorflow-cpu
-Pillow
+jinja2
+pillow
+numpy
+tensorflow-cpu==2.15.0
