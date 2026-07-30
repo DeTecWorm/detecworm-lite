@@ -4,4 +4,3 @@ python-multipart
 jinja2
 pillow
 numpy
-tensorflow-cpu==2.15.0
