@@ -1,6 +1,9 @@
 fastapi
 uvicorn
-python-multipart
 jinja2
-pillow
-numpy
+starlette
+itsdangerous
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+requests
