@@ -11,4 +11,4 @@ sqlalchemy
 python-multipart
 numpy
 Pillow
-tflite-runtime
+aiedge-tflite-runtime
