@@ -11,4 +11,4 @@ sqlalchemy
 python-multipart
 numpy
 Pillow
-aiedge-tflite-runtime
+tensorflow-cpu
