@@ -9,3 +9,6 @@ google-auth-httplib2
 requests
 sqlalchemy
 python-multipart
+numpy
+Pillow
+tflite-runtime
