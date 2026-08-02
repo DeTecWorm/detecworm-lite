@@ -154,44 +154,119 @@ async def logout(request: Request):
 
 
 # ------------------------------------------------------------------
-# ESCUDO ANTI-BASURA 6.0: REALITY CHECK (MATEMÁTICA PURA)
+# ESCUDO ANTI-BASURA 7.0: RGB + HSV + TEXTURA (REALITY CHECK REFORZADO)
 # ------------------------------------------------------------------
 def analizar_caracteristicas_imagen(pil_img):
+    """
+    Extrae métricas de color y textura de la imagen para:
+      1) Rechazar de forma robusta fotos que NO son foliaje de cultivo
+         (personas/piel, capturas de pantalla, interiores, y superficies
+         lisas de color cálido que imitan tonos de vegetación seca).
+      2) Reconocer vegetación real en cualquier estado -sana, con estrés
+         temprano (clorosis) o seca/dañada (marrón, pajiza)- sin perder
+         sensibilidad por usar solo el espacio RGB crudo.
+
+    Se combinan tres señales independientes:
+      - RGB crudo: para oscuridad total (pantallas/código) y neutros
+        grises/blancos (paredes, pisos, fondos de interior).
+      - HSV (tono/saturación/valor): mucho más estable que el RGB puro
+        para separar "verde vivo" de "marrón/amarillo seco" bajo
+        distintas condiciones de luz y exposición.
+      - Textura local (gradiente medio de intensidad): el follaje real
+        -incluso seco- tiene venas, bordes y fibras que generan alta
+        variación local; la piel, paredes, telas y pantallas tienden a
+        ser mucho más uniformes a nivel de píxel.
+
+    Nota de ingeniería: esto sigue siendo un filtro heurístico basado en
+    estadística de color/textura, no un clasificador entrenado. Reduce
+    drásticamente los falsos positivos frente a la versión anterior
+    (piel, interiores, pantallas, superficies lisas), pero un caso como
+    pelaje de animal con textura fibrosa y tono similar a paja seca
+    puede seguir coincidiendo con el rango de "vegetación seca": ese
+    nivel de distinción ya requeriría una clase "fondo/no-vegetal"
+    entrenada en el propio modelo TFLite, no solo reglas de color.
+    """
     img_np = np.array(pil_img, dtype=np.float32)
     R = img_np[:, :, 0]
     G = img_np[:, :, 1]
     B = img_np[:, :, 2]
     total_pixeles = R.size
 
-    # 1. Filtros de Entorno (Bloquea Código y Personas/Oficinas)
+    # ---------------- Conversión vectorizada RGB -> HSV ----------------
+    r, g, b = R / 255.0, G / 255.0, B / 255.0
+    maxc = np.maximum(np.maximum(r, g), b)
+    minc = np.minimum(np.minimum(r, g), b)
+    delta = maxc - minc
+    delta_safe = np.where(delta == 0, 1e-6, delta)
+
+    hue = np.zeros_like(maxc)
+    mask_r = (maxc == r) & (delta > 0)
+    mask_g = (maxc == g) & (delta > 0) & (~mask_r)
+    mask_b = (maxc == b) & (delta > 0) & (~mask_r) & (~mask_g)
+
+    hue[mask_r] = 60 * (((g[mask_r] - b[mask_r]) / delta_safe[mask_r]) % 6)
+    hue[mask_g] = 60 * (((b[mask_g] - r[mask_g]) / delta_safe[mask_g]) + 2)
+    hue[mask_b] = 60 * (((r[mask_b] - g[mask_b]) / delta_safe[mask_b]) + 4)
+
+    sat = np.where(maxc > 0, delta / np.where(maxc == 0, 1e-6, maxc), 0)
+    val = maxc
+
+    # 1. Capturas de pantalla / entornos casi negros
     mask_dark = (R < 50) & (G < 50) & (B < 50)
     ratio_dark = np.sum(mask_dark) / total_pixeles
 
+    # 2. Interiores: grises/blancos neutros (paredes, pisos, techos)
     mask_gray_white = (np.abs(R - G) < 25) & (np.abs(G - B) < 25) & (R > 90)
     ratio_gray_white = np.sum(mask_gray_white) / total_pixeles
 
-    # 2. Espectro de Vegetación Global (Verde + Biomasa Seca)
-    mask_verde = (G >= R * 0.90) & (G > B * 1.1) & (G > 30)
-    ratio_verde = np.sum(mask_verde) / total_pixeles
+    # 3. Tono "cálido liso" tipo piel/objeto (regla RGB de Peer et al.,
+    #    ampliamente usada en detección de piel; también atrapa madera,
+    #    cartón, ladrillo y otras superficies cálidas sin vegetación)
+    max_rgb = np.maximum(np.maximum(R, G), B)
+    min_rgb = np.minimum(np.minimum(R, G), B)
+    mask_tono_calido = (
+        (R > 95) & (G > 40) & (B > 20)
+        & ((max_rgb - min_rgb) > 15)
+        & (np.abs(R - G) > 15)
+        & (R > G) & (R > B)
+    )
+    ratio_tono_calido = np.sum(mask_tono_calido) / total_pixeles
 
-    mask_seca = (R >= G * 0.85) & (R <= G * 1.35) & (G > B * 1.05) & (R > 50)
-    ratio_seca = np.sum(mask_seca) / total_pixeles
-    
+    # 4. Vegetación viva: verdes en HSV (más estable que el ratio RGB puro)
+    mask_verde_hsv = (hue >= 65) & (hue <= 170) & (sat > 0.15) & (val > 0.12)
+    ratio_verde = np.sum(mask_verde_hsv) / total_pixeles
+
+    # 5. Vegetación seca/senescente: amarillo-marrón-pajizo en HSV
+    #    (paja, tallos secos, hojas marchitas tipo sorgo)
+    mask_seca_hsv = (hue >= 15) & (hue <= 65) & (sat > 0.12) & (val > 0.10)
+    ratio_seca = np.sum(mask_seca_hsv) / total_pixeles
+
     ratio_vegetacion = ratio_verde + ratio_seca
 
-    # 3. Píxeles Puros para "Reality Check" contra la IA
-    puro_verde = (G > R * 1.05) & (G > B * 1.2) & (G > 45)
-    ratio_puro_verde = np.sum(puro_verde) / total_pixeles
+    # 6. Textura local: hojas/tallos reales (incluso secos) tienen alta
+    #    variación de intensidad por venas/fibras/bordes; piel, paredes,
+    #    pantallas y fondos lisos son mucho más uniformes.
+    gray = 0.299 * R + 0.587 * G + 0.114 * B
+    gx = np.diff(gray, axis=1)
+    gy = np.diff(gray, axis=0)
+    textura_score = float((np.mean(np.abs(gx)) + np.mean(np.abs(gy))) / 2.0)
 
-    puro_seco = (R > G * 1.05) & (R < G * 1.3) & (G > B * 1.2) & (R > 60)
-    ratio_puro_seco = np.sum(puro_seco) / total_pixeles
+    # El tono cálido-liso solo se considera "no vegetal" (piel/objeto) si
+    # ADEMÁS la superficie es lisa (poca textura). Esto es clave: evita
+    # que se rechace vegetación seca real, que comparte el tono cálido
+    # con la piel pero tiene mucha más textura fibrosa.
+    es_superficie_calida_lisa = bool(ratio_tono_calido > 0.35 and textura_score < 7.0)
 
     return {
-        "is_code_or_screen": ratio_dark > 0.40,
-        "is_indoor": ratio_gray_white > 0.40,
-        "veg_ratio": ratio_vegetacion,
-        "puro_verde": ratio_puro_verde,
-        "puro_seco": ratio_puro_seco
+        "is_code_or_screen": bool(ratio_dark > 0.40),
+        "is_indoor": bool(ratio_gray_white > 0.40),
+        "is_skin_or_smooth_object": es_superficie_calida_lisa,
+        "is_low_texture": bool(textura_score < 3.0),
+        "veg_ratio": float(ratio_vegetacion),
+        "puro_verde": float(ratio_verde),
+        "puro_seco": float(ratio_seca),
+        "ratio_tono_calido": float(ratio_tono_calido),
+        "textura_score": textura_score,
     }
 
 
@@ -236,15 +311,38 @@ async def analizar_imagen(file: UploadFile = File(...)):
         # PASO A: Escáner visual algorítmico
         metricas = analizar_caracteristicas_imagen(image_resized)
 
-        # 🛑 ESCUDO ANTI-BASURA DEFINITIVO 🛑
-        if metricas["is_code_or_screen"] or metricas["is_indoor"] or metricas["veg_ratio"] < 0.12:
+        # 🛑 ESCUDO ANTI-BASURA 7.0 🛑
+        vegetacion_insuficiente = metricas["veg_ratio"] < 0.15
+        # Fondo/objeto liso sin textura vegetal Y con muy poca vegetación real:
+        # típico de paredes, telas o superficies vacías que el filtro de color
+        # por sí solo podría dejar pasar.
+        fondo_liso_sospechoso = metricas["is_low_texture"] and metricas["veg_ratio"] < 0.30
+
+        es_rechazo = (
+            metricas["is_code_or_screen"]
+            or metricas["is_indoor"]
+            or metricas["is_skin_or_smooth_object"]
+            or vegetacion_insuficiente
+            or fondo_liso_sospechoso
+        )
+
+        if es_rechazo:
+            if metricas["is_skin_or_smooth_object"]:
+                motivo = "Se detectó piel humana u otro objeto/superficie lisa (no vegetal) como elemento dominante de la imagen."
+            elif metricas["is_code_or_screen"]:
+                motivo = "La imagen parece ser una captura de pantalla, código o un entorno con muy poca luz, sin relación con el cultivo."
+            elif metricas["is_indoor"]:
+                motivo = "La imagen parece haber sido tomada en un entorno interior (paredes, pisos u objetos), sin cultivo visible."
+            else:
+                motivo = "La imagen no contiene suficiente biomasa vegetal reconocible (hojas, tallos o follaje)."
+
             return {
                 "status": "warning",
                 "diagnostico": "Material Foliar No Detectado",
                 "nivel_riesgo": "desconocido",
                 "confianza": 0.0,
                 "porcentaje_dano": 0.0,
-                "analisis_visual": "La imagen no contiene biomasa vegetal suficiente, o parece ser una captura de pantalla / entorno interior.",
+                "analisis_visual": motivo,
                 "recomendacion": "Por favor sube una fotografía enfocada directamente en las hojas o el cultivo en campo."
             }
 
