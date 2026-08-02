@@ -39,6 +39,52 @@
             </div>
         </div>
 
+        <!-- Barra de Filtros y Búsqueda -->
+        <div class="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-3.5 space-y-3 backdrop-blur">
+            <div class="flex justify-between items-center text-xs text-slate-400 px-1">
+                <span class="font-semibold uppercase tracking-wider text-[11px] text-slate-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-filter text-emerald-400"></i> Filtrar Historial
+                </span>
+                {% if filtro_riesgo_actual or filtro_fecha_actual %}
+                <a href="/perfil" class="text-rose-400 hover:underline text-[11px] flex items-center gap-1">
+                    <i class="fa-solid fa-xmark"></i> Limpiar filtros
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Botones Semáforo y Filtro de Fecha -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <!-- Botones de Estado / Semáforo -->
+                <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800/80">
+                    <a href="/perfil{% if filtro_fecha_actual %}?fecha={{ filtro_fecha_actual }}{% endif %}" 
+                       class="flex-1 text-center text-[11px] py-1.5 rounded-lg transition font-medium {% if not filtro_riesgo_actual %}bg-slate-800 text-slate-100 shadow{% else %}text-slate-400 hover:text-slate-200{% endif %}">
+                        Todos
+                    </a>
+                    <a href="/perfil?riesgo=verde{% if filtro_fecha_actual %}&fecha={{ filtro_fecha_actual }}{% endif %}" 
+                       class="px-2.5 py-1.5 text-[11px] rounded-lg transition font-semibold flex items-center justify-center gap-1 {% if filtro_riesgo_actual == 'verde' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow{% else %}text-emerald-500/60 hover:text-emerald-400{% endif %}" title="Bajo riesgo">
+                        🟢
+                    </a>
+                    <a href="/perfil?riesgo=amarillo{% if filtro_fecha_actual %}&fecha={{ filtro_fecha_actual }}{% endif %}" 
+                       class="px-2.5 py-1.5 text-[11px] rounded-lg transition font-semibold flex items-center justify-center gap-1 {% if filtro_riesgo_actual == 'amarillo' %}bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow{% else %}text-amber-500/60 hover:text-amber-400{% endif %}" title="Riesgo moderado">
+                        🟡
+                    </a>
+                    <a href="/perfil?riesgo=rojo{% if filtro_fecha_actual %}&fecha={{ filtro_fecha_actual }}{% endif %}" 
+                       class="px-2.5 py-1.5 text-[11px] rounded-lg transition font-semibold flex items-center justify-center gap-1 {% if filtro_riesgo_actual == 'rojo' %}bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow{% else %}text-rose-500/60 hover:text-rose-400{% endif %}" title="Riesgo severo">
+                        🔴
+                    </a>
+                </div>
+
+                <!-- Selector de Fecha -->
+                <div class="relative">
+                    <input type="date" 
+                           id="filtroFecha" 
+                           value="{{ filtro_fecha_actual }}" 
+                           onchange="filtrarPorFecha(this.value)"
+                           class="w-full bg-slate-950 border border-slate-800/80 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500/50 transition">
+                </div>
+            </div>
+        </div>
+
         <!-- Sección de Historial -->
         <div class="space-y-4">
             <div class="flex justify-between items-center px-1">
@@ -56,10 +102,28 @@
                     <div id="card-{{ item.id }}" class="bg-slate-900/50 border border-slate-800/80 hover:border-slate-700 rounded-xl p-4 transition-all duration-300">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <span class="text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">
-                                    {{ item.cultivo }}
-                                </span>
-                                <h3 class="text-base font-bold text-slate-100 mt-1.5">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">
+                                        {{ item.cultivo }}
+                                    </span>
+
+                                    <!-- Badge Dinámico Semáforo -->
+                                    {% if item.nivel_riesgo == 'rojo' %}
+                                        <span class="text-[10px] font-semibold text-rose-400 bg-rose-950/60 border border-rose-800/50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Severo
+                                        </span>
+                                    {% elif item.nivel_riesgo == 'amarillo' %}
+                                        <span class="text-[10px] font-semibold text-amber-400 bg-amber-950/60 border border-amber-800/50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Moderado
+                                        </span>
+                                    {% else %}
+                                        <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Sano
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <h3 class="text-base font-bold text-slate-100 mt-1">
                                     {{ item.diagnostico }}
                                 </h3>
                             </div>
@@ -96,12 +160,24 @@
                             <i class="fa-solid fa-seedling text-xl"></i>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-slate-300">Aún no tienes consultas registradas</p>
-                            <p class="text-xs text-slate-500 mt-1">Escanea o sube una imagen de un cultivo para generar tu primer diagnóstico.</p>
+                            <p class="text-sm font-medium text-slate-300">No se encontraron consultas</p>
+                            <p class="text-xs text-slate-500 mt-1">
+                                {% if filtro_riesgo_actual or filtro_fecha_actual %}
+                                    No hay registros que coincidan con los filtros aplicados.
+                                {% else %}
+                                    Escanea o sube una imagen de un cultivo para generar tu primer diagnóstico.
+                                {% endif %}
+                            </p>
                         </div>
-                        <a href="/" class="inline-block mt-2 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-xl transition shadow-lg shadow-emerald-900/20">
-                            Escanear cultivo
-                        </a>
+                        {% if filtro_riesgo_actual or filtro_fecha_actual %}
+                            <a href="/perfil" class="inline-block mt-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2 rounded-xl transition">
+                                Limpiar Filtros
+                            </a>
+                        {% else %}
+                            <a href="/" class="inline-block mt-2 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-xl transition shadow-lg shadow-emerald-900/20">
+                                Escanear cultivo
+                            </a>
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
@@ -137,6 +213,16 @@
 
     <script>
         let targetIdToDelete = null;
+
+        function filtrarPorFecha(fecha) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (fecha) {
+                urlParams.set('fecha', fecha);
+            } else {
+                urlParams.delete('fecha');
+            }
+            window.location.search = urlParams.toString();
+        }
 
         function solicitarEliminar(id) {
             targetIdToDelete = id;
