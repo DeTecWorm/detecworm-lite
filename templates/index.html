@@ -20,6 +20,9 @@
             <a href="/" class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-lg hover:opacity-80 transition">
                 <i class="fa-solid fa-leaf text-base"></i>
                 <span>DeTecWorm <span class="text-xs bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-full font-semibold">Pocket</span></span>
+                <span id="proBadgeHeader" class="hidden text-xs bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 px-2 py-0.5 rounded-full font-semibold">
+                    <i class="fa-solid fa-star"></i> PRO
+                </span>
             </a>
 
             <!-- Acciones de Escritorio / Ocultas en Móvil pequeño -->
@@ -29,9 +32,9 @@
                     <span id="themeText">Oscuro</span>
                 </button>
 
-                <button onclick="openQrModal()" class="flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/60 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl px-3 py-1.5 text-xs font-semibold transition" title="Vincular Hardware por QR">
+                <button onclick="openQrModal()" id="nodoBtnDesktop" class="flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/60 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl px-3 py-1.5 text-xs font-semibold transition" title="Activar Nodo PRO">
                     <i class="fa-solid fa-qrcode"></i>
-                    <span>Agregar Nodo</span>
+                    <span id="nodoBtnTextDesktop">Agregar Nodo</span>
                 </button>
 
                 <a href="/perfil" class="flex items-center gap-2 bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/50 rounded-xl px-3 py-1.5 transition" title="Ver mi perfil e historial">
@@ -69,8 +72,8 @@
             <a href="/perfil" class="block px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200">
                 <i class="fa-solid fa-user-gear mr-2 text-emerald-500"></i> Mi Perfil e Historial
             </a>
-            <button onclick="openQrModal()" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                <i class="fa-solid fa-qrcode mr-2"></i> Agregar Nodo (QR)
+            <button onclick="openQrModal()" id="nodoBtnMobile" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                <i class="fa-solid fa-qrcode mr-2"></i> <span id="nodoBtnTextMobile">Agregar Nodo (QR)</span>
             </button>
             <button onclick="toggleTheme()" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 flex items-center justify-between">
                 <span><i class="fa-solid fa-moon mr-2 text-amber-400"></i> Cambiar Tema</span>
@@ -153,28 +156,85 @@
             </div>
 
         </div>
+
+        <!-- Card IA Avanzada + Telemetría (función PRO, exclusiva del Nodo físico) -->
+        <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-lg backdrop-blur">
+            <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i class="fa-solid fa-brain text-emerald-600 dark:text-emerald-400"></i> Predicción Avanzada IA + Sensores
+                <span class="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 px-2 py-0.5 rounded-full font-bold">PRO</span>
+            </h2>
+
+            <div id="proLockedPanel" class="flex flex-col items-center text-center gap-3 py-4">
+                <div class="w-12 h-12 bg-amber-100 dark:bg-amber-950/40 text-amber-500 rounded-full flex items-center justify-center border border-amber-300 dark:border-amber-800">
+                    <i class="fa-solid fa-lock text-lg"></i>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 max-w-sm leading-relaxed">
+                    Esta función viene incluida con el <strong class="text-slate-800 dark:text-slate-200">Nodo DeTecWorm</strong> físico: cruza la IA de imagen con el historial completo de tus sensores en campo para anticipar riesgos.
+                </p>
+                <button onclick="openQrModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-key mr-1"></i> Activar Nodo PRO
+                </button>
+            </div>
+
+            <div id="proContentPanel" class="hidden bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>
+                    Módulo PRO activo. Este panel está listo para mostrar tendencias de riesgo y alertas anticipadas en cuanto tu nodo empiece a reportar telemetría.
+                </p>
+            </div>
+        </div>
     </main>
 
-    <!-- Modal para Agregar Nodo por QR -->
+    <!-- Modal para Agregar / Activar Nodo -->
     <div id="qrModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <i class="fa-solid fa-qrcode text-emerald-500"></i> Vincular Nodo IoT
+                    <i class="fa-solid fa-qrcode text-emerald-500"></i> Activar Nodo DeTecWorm
                 </h3>
                 <button onclick="closeQrModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+
+            <!-- Estado: nodo ya activo -->
+            <div id="nodoEstadoActivo" class="hidden bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 space-y-2">
+                <p class="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check"></i> Nodo PRO activo en este navegador
+                </p>
+                <p class="text-xs text-slate-600 dark:text-slate-400">
+                    Código vinculado: <strong id="nodoCodigoActual" class="text-slate-800 dark:text-slate-200">--</strong>
+                </p>
+                <button onclick="desactivarPro()" class="w-full text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-lg py-2 transition hover:bg-rose-200 dark:hover:bg-rose-900/40">
+                    Desvincular este nodo
+                </button>
+            </div>
+
+            <!-- Zona QR (simulada) -->
             <div class="border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl p-6 text-center bg-slate-50 dark:bg-slate-950/40 space-y-3">
                 <div class="w-16 h-16 mx-auto bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-2xl">
                     <i class="fa-solid fa-camera-rotate"></i>
                 </div>
-                <p class="text-xs text-slate-600 dark:text-slate-400">Escanea el código QR impreso en el nodo DeTecWorm.</p>
+                <p class="text-xs text-slate-600 dark:text-slate-400">Escanea el código QR impreso en la carcasa del nodo DeTecWorm.</p>
+                <button onclick="simularEscaneoQR()" class="w-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-camera mr-1"></i> Simular escaneo de QR
+                </button>
             </div>
-            <button onclick="alert('Módulo de lectura QR listo para activarse con hardware.'); closeQrModal();" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs transition">
-                Activar Cámara QR
-            </button>
+
+            <!-- Entrada manual del código -->
+            <form onsubmit="return validarCodigoNodo(event)" class="space-y-2">
+                <label for="codigoNodo" class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                    O ingresa el código manualmente
+                </label>
+                <input type="text" id="codigoNodo" placeholder="DTW-PRO-XXXX" autocomplete="off"
+                       class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500/60 transition">
+
+                <div id="nodoError" class="hidden text-xs text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-lg px-3 py-2"></div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs transition">
+                    Activar Nodo
+                </button>
+            </form>
         </div>
     </div>
 

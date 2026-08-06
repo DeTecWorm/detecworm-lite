@@ -15,10 +15,18 @@
             <a href="/" class="flex items-center gap-2 text-emerald-400 font-bold text-lg hover:opacity-80 transition">
                 <i class="fa-solid fa-arrow-left text-sm"></i>
                 <span>DeTecWorm <span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full">Pocket</span></span>
+                <span id="proBadgeHeader" class="hidden text-xs bg-amber-950 text-amber-400 border border-amber-800 px-2 py-0.5 rounded-full font-semibold">
+                    <i class="fa-solid fa-star"></i> PRO
+                </span>
             </a>
-            <a href="/logout" class="text-xs text-rose-400 hover:text-rose-300 font-medium bg-rose-950/40 border border-rose-900/50 px-3 py-1.5 rounded-lg transition">
-                <i class="fa-solid fa-right-from-bracket mr-1"></i> Salir
-            </a>
+            <div class="flex items-center gap-2">
+                <a href="/" id="nodoBtnPerfil" class="text-xs text-emerald-400 hover:text-emerald-300 font-medium bg-emerald-950/40 border border-emerald-900/50 px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-solid fa-key mr-1"></i> <span id="nodoBtnTextPerfil">Activar Nodo</span>
+                </a>
+                <a href="/logout" class="text-xs text-rose-400 hover:text-rose-300 font-medium bg-rose-950/40 border border-rose-900/50 px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Salir
+                </a>
+            </div>
         </div>
     </header>
 
@@ -36,6 +44,33 @@
                         <i class="fa-solid fa-circle text-[6px] mr-1.5 text-emerald-400 animate-pulse"></i> Cuenta Activa
                     </span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Telemetría & Estadísticas Avanzadas (función PRO, exclusiva del Nodo físico) -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3 backdrop-blur">
+            <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-emerald-400"></i> Histogramas & Telemetría
+                <span class="text-[10px] bg-amber-950 text-amber-400 border border-amber-800 px-2 py-0.5 rounded-full font-bold">PRO</span>
+            </h2>
+
+            <div data-pro-locked class="flex flex-col items-center text-center gap-3 py-6 border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
+                <div class="w-12 h-12 bg-amber-950/40 text-amber-500 rounded-full flex items-center justify-center border border-amber-800">
+                    <i class="fa-solid fa-lock text-lg"></i>
+                </div>
+                <p class="text-xs text-slate-400 max-w-sm leading-relaxed px-4">
+                    Los histogramas de 24h/30 días, gráficas detalladas de sensores y la predicción avanzada de IA vienen incluidos con el <strong class="text-slate-200">Nodo DeTecWorm</strong> físico.
+                </p>
+                <a href="/" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-key mr-1"></i> Activar Nodo PRO
+                </a>
+            </div>
+
+            <div data-pro-content class="hidden bg-slate-950/40 border border-slate-800 rounded-xl p-4">
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>
+                    Módulo PRO activo. En cuanto tu nodo empiece a reportar telemetría, aquí verás los histogramas de temperatura, humedad ambiente y humedad de suelo (24h / 30 días).
+                </p>
             </div>
         </div>
 
@@ -210,6 +245,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Reutiliza la misma lógica PRO (localStorage) definida en static/script.js -->
+    <script src="/static/script.js"></script>
 
     <script>
         let targetIdToDelete = null;
